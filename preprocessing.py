@@ -21,7 +21,7 @@ def convert_sdf_to_csv(sdf_file_path, properties=None, csv_file_path=None):
             # Check if the example contains all the searched properties
             if set(properties) <= set(properties_dict.keys()):
                 mol_dict.update({property: properties_dict[property] for property in properties})
-            mols.append(mol_dict)
+                mols.append(mol_dict)
         except Exception as err:
             print(err)
 
