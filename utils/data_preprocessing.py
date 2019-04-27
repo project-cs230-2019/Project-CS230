@@ -3,6 +3,18 @@ from rdkit.Chem import Draw
 from rdkit.Chem.rdmolops import RDKFingerprint
 from keras.preprocessing.image import load_img
 import csv
+import logging
+import random
+
+# Set random seed to make the result reproducible
+random.seed(1)
+
+
+# Set up logging
+FORMAT = '%(asctime)s - %(levelname)s: %(message)s'
+logging.basicConfig(format=FORMAT)
+LOGGER = logging.getLogger()
+LOGGER.setLevel(logging.INFO)
 
 
 def convert_sdf_to_csv(sdf_file_path, properties=None, csv_file_path=None):
@@ -22,11 +34,21 @@ def convert_sdf_to_csv(sdf_file_path, properties=None, csv_file_path=None):
             mol_dict["smile"] = Chem.MolToSmiles(mol)
             properties_dict = mol.GetPropsAsDict()
             # Check if the example contains all the searched properties
+            # otherwise discard it
             if set(properties) <= set(properties_dict.keys()):
                 mol_dict.update({property: properties_dict[property] for property in properties})
-            mols.append(mol_dict)
+                mols.append(mol_dict)
         except Exception as err:
-            print(err)
+            LOGGER.error(err)
+
+    # Shuffle the training data for the subsequent validation split
+    random.shuffle(mols)
+
+    LOGGER.info(
+        "dataset is composed by %d molecules with the following properties: %s",
+        len(mols),
+        properties
+    )
 
     csv_file_path = csv_file_path or sdf_file_path.replace(".sdf", ".csv")
 
@@ -78,9 +100,12 @@ def convert_img_into_array(path_to_img):
 
 def main():
     """ Main function """
-    # convert_sdf_to_csv('data/tox21_10k_data_all.sdf', properties=['SR-HSE'])
-    convert_smiles_into_2d_structure_images('O=C(C)Oc1ccccc1C(=O)O')
-    convert_img_into_array('data/cdk2_mol1.o.png')
+    properties = ['NR-AR', 'NR-ER-LBD', 'SR-ATAD5']
+    # properties = ['NR-AhR', 'NR-AR', 'NR-AR-LBD', 'NR-ER', 'NR-ER-LBD', 'NR-PPAR-gamma', 'SR-ARE', 'SR-ATAD5', 'SR-HSE', 'SR-MMP', 'SR-p53', 'NR-Aromatase']
+    convert_sdf_to_csv('data/tox21_10k_data_all.sdf', properties=properties)
+    # convert_smiles_into_2d_structure_images('O=C(C)Oc1ccccc1C(=O)O')
+    # convert_img_into_array('data/cdk2_mol1.o.png')
+    # get_fingerprints_data('data/tox21_10k_data_all.csv')
 
 
 if __name__ == '__main__':
