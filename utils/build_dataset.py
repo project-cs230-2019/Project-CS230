@@ -1,10 +1,11 @@
 import numpy as np
-import csv
+from utils.misc import set_up_logging
 
-from utils.data_preprocessing import convert_smiles_into_fingerprints
+# Set up logging
+LOGGER = set_up_logging(__name__)
 
 
-def split_train_test_dataset(dataset, split=0.1):
+def split_train_test_dataset(dataset, split):
     """
     This function splits the dataset in train and test ration
 
@@ -18,31 +19,42 @@ def split_train_test_dataset(dataset, split=0.1):
     return train_set, test_set
 
 
-def build_fingerprints_dataset(dataset):
-    """
-    This function converts the smiles into fingerprints and the properties into
-    vectors if multiples.
-
-    :param dataset:         A list of dictionaries each one including
-                            smile and property/ies
-    :return:                A tuple of X and
-    """
-    X = []
-    Y = []
-    for mol in dataset:
-        fpmol = convert_smiles_into_fingerprints(mol[0])
-        X.append(np.array(list(fpmol)))
-        Y.append(np.array(mol[1:]))
-
-    return np.array(X), np.array(Y)
-
-
-def get_fingerprints_data():
-    # Read csv file
-    with open('data/tox21_10k_data_all.csv', 'r') as csvfile:
-        dataset = list(csv.reader(csvfile))[1:]
+def get_data(data_file, test_data_file=None, split=0.1):
+    # Read npz file
+    with np.load(data_file) as data:
+        X = data['x']
+        Y = data['y']
 
     # Split train and test set
-    train_set, test_set = split_train_test_dataset(dataset)
+    if not test_data_file:
+        x_train, x_test = split_train_test_dataset(X, split)
+        y_train, y_test = split_train_test_dataset(Y, split)
+    else:
+        with np.load(test_data_file) as test_data:
+            x_test = test_data['x']
+            y_test = test_data['y']
+        x_train = X
+        y_train = Y
 
-    return build_fingerprints_dataset(train_set), build_fingerprints_dataset(test_set)
+    LOGGER.debug(
+        '\nx_train shape: %r\n'
+        'y_train shape: %r\n'
+        'x_test shape: %r\n'
+        'y_test shape: %r\n',
+        x_train.shape,
+        y_train.shape,
+        x_test.shape,
+        y_test.shape
+    )
+
+    return (x_train, y_train), (x_test, y_test)
+
+
+def main():
+    (x_train, y_train), (x_test, y_test) = get_data('../data/ncidb_fingerprints.npz')
+    print(list(x_test))
+    print(list(y_test))
+
+
+if __name__ == '__main__':
+    main()
