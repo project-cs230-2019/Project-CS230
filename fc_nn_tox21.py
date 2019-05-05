@@ -6,7 +6,7 @@ import keras
 import matplotlib.pyplot as plt
 
 from utils.build_dataset import get_data
-from utils.misc import set_up_logging
+from utils.misc import set_up_logging, f1_score
 
 # Set up logging
 LOGGER = set_up_logging(__name__)
@@ -28,7 +28,7 @@ def fcnn_classifier_tox21(n_x, n_y):
 
     classifier.compile(optimizer=tf.train.AdamOptimizer(),
                        loss='binary_crossentropy',
-                       metrics=['accuracy'])
+                       metrics=['accuracy', f1_score])
 
     return classifier
 
@@ -70,6 +70,19 @@ def main(train=False):
         plt.show()
         #Save the plot
 
+        #Get data from history
+        print(history.history.keys())
+        plt.plot(history.history['f1_score'])
+        plt.plot(history.history['val_f1_score'])
+        plt.title("model F1 score")
+        plt.ylabel('F1 score')
+        plt.xlabel('epoch')
+        plt.xticks(range(0, epochs, 1))
+        plt.legend(['train', 'val'], loc='upper left')
+        plt.savefig("output/fcnn_tox21_f1_%s.png" % epochs)
+        plt.show()
+        #Save the plot
+
         #Plot the loss
         plt.plot(history.history['loss'])
         plt.plot(history.history['val_loss'])
@@ -91,11 +104,12 @@ def main(train=False):
         fcnn_clf.load_weights(weights_file_path)
 
     print('\ntest the classifier')
-    test_loss, test_acc = fcnn_clf.evaluate(x_test, y_test)
+    test_loss, test_acc, test_f1_score = fcnn_clf.evaluate(x_test, y_test)
 
     print('\n#######################################')
     print('Test loss:', test_loss)
     print('Test accuracy:', test_acc)
+    print('Test F1 score:', test_f1_score)
 
 
 if __name__ == '__main__':
