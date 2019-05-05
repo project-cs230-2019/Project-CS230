@@ -1,15 +1,27 @@
 """ Fully connected Neural Network fingerprints classifier for tox21 """
-from utils.build_dataset import get_fingerprints_data
+import os
+
 import tensorflow as tf
 import keras
 import matplotlib.pyplot as plt
 
+from utils.build_dataset import get_data
+from utils.misc import set_up_logging
 
-def fcnn_classifier(n_x, n_y):
-    """ This function returns a Fully Connected NN keras classifier
-    :return:    keras untrained Fully Connected NN soft_max classifier
+# Set up logging
+LOGGER = set_up_logging(__name__)
+
+
+def fcnn_classifier_tox21(n_x, n_y):
+    """
+    This function returns a Fully Connected NN keras classifier
+
+    :param n_x:     size of the input
+    :param n_y:     size of the output
+    :return:        keras untrained Fully Connected NN multi-class classifier
     """
     classifier = keras.Sequential([
+        keras.layers.InputLayer(input_shape=(n_x,)),
         keras.layers.Dense(n_x, activation=tf.nn.relu),
         keras.layers.Dense(n_y, activation=tf.nn.sigmoid)
     ])
@@ -24,14 +36,14 @@ def fcnn_classifier(n_x, n_y):
 def main(train=False):
     """ Main function """
     # Get train and test dataset
-    (x_train, y_train), (x_test, y_test) = get_fingerprints_data()
+    (x_train, y_train), (x_test, y_test) = get_data('data/tox21_10k_data_all_fingerprints.npz')
 
     n_x = x_train[0].shape[0]
     n_y = y_train[0].shape[0]
 
 
     # Build classifier
-    fcnn_clf = fcnn_classifier(n_x, n_y)
+    fcnn_clf = fcnn_classifier_tox21(n_x, n_y)
 
     epochs = 5
 
@@ -42,7 +54,7 @@ def main(train=False):
         history = fcnn_clf.fit(x_train, y_train, epochs=epochs, validation_split=0.1)
 
         # Save weights
-        fcnn_clf.save_weights('weights/fcnn_clf_%s.h5' % epochs)
+        fcnn_clf.save_weights('weights/fcnn_tox21_%s.h5' % epochs)
 
 
         #Get data from history
@@ -52,8 +64,9 @@ def main(train=False):
         plt.title("model accuracy")
         plt.ylabel('accuracy')
         plt.xlabel('epoch')
-        plt.legend(['train', 'test'], loc='upper left')
-        plt.savefig("output/fully_connected_model_accuracy.png")
+        plt.xticks(range(0, epochs, 1))
+        plt.legend(['train', 'val'], loc='upper left')
+        plt.savefig("output/fcnn_tox21_acc_%s.png" % epochs)
         plt.show()
         #Save the plot
 
@@ -63,15 +76,18 @@ def main(train=False):
         plt.title('model loss')
         plt.ylabel('loss')
         plt.xlabel('epoch')
-        plt.legend(['train', 'test'], loc='upper left')
-        plt.savefig("output/fully_connected_model_loss.png")
+        plt.xticks(range(0, epochs, 1))
+        plt.legend(['train', 'val'], loc='upper left')
+        plt.savefig("output/fcnn_tox21_loss_%s.png" % epochs)
         plt.show()
     else:
         # Load the model weights
-        import os
-        weights_file_path = os.path.abspath(os.path.join(os.curdir, 'weights/fcnn_clf_%s.h5' % epochs))
-        if not print(os.path.exists(weights_file_path)):
-            print("The weights file path specified does not exists: %s" % os.path.exists(weights_file_path))
+        weights_file_path = os.path.abspath(os.path.join(os.curdir, 'weights/fcnn_tox21_%s.h5' % epochs))
+        if not os.path.exists(weights_file_path):
+            raise Exception(
+                "The weights file path specified does not exists: %s"
+                % os.path.exists(weights_file_path)
+            )
         fcnn_clf.load_weights(weights_file_path)
 
     print('\ntest the classifier')
