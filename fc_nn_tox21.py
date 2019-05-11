@@ -3,7 +3,9 @@ import os
 
 import tensorflow as tf
 import keras
-import matplotlib.pyplot as plt
+import matplotlib
+matplotlib.use("TkAgg")
+from matplotlib import pyplot as plt
 
 from utils.build_dataset import get_data
 from utils.misc import set_up_logging, f1_score
