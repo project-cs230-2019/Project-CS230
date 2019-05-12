@@ -47,22 +47,23 @@ def convert_sdf_to_npz(
             # Get molecular object properties dict
             properties_dict = mol.GetPropsAsDict()
 
-            smile = Chem.MolToSmiles(mol)
-
-            if struct_type == 'fingerprints':
-                structure = convert_smiles_into_fingerprints(smile)
-            elif struct_type == '2Dimg':
-                # TODO implement the image importer
-                raise NotImplementedError('The image importer has not been implemented yet')
-            else:
-                raise NameError(
-                    'The structure type specified does not exist. '
-                    'Valid values: ["fingerprints", "2Dimg"]'
-                )
-
             # Check if the example contains all the searched properties
-            # otherwise discard it
+            # otherwise continue
             if set(properties) <= set(properties_dict.keys()):
+
+                smile = Chem.MolToSmiles(mol)
+
+                if struct_type == 'fingerprints':
+                    structure = convert_smiles_into_fingerprints(smile)
+                elif struct_type == '2Dimg':
+                    # TODO implement the image importer
+                    raise NotImplementedError('The image importer has not been implemented yet')
+                else:
+                    raise NameError(
+                        'The structure type specified does not exist. '
+                        'Valid values: ["fingerprints", "2Dimg"]'
+                    )
+
                 X.append(structure)
                 Y.append([properties_dict[key] for key in properties])
 
@@ -150,6 +151,7 @@ def main():
     # properties = ['NR-AhR', 'NR-AR', 'NR-AR-LBD', 'NR-ER', 'NR-ER-LBD', 'NR-PPAR-gamma', 'SR-ARE', 'SR-ATAD5', 'SR-HSE', 'SR-MMP', 'SR-p53', 'NR-Aromatase']
     convert_sdf_to_npz('data/tox21_10k_data_all.sdf', properties=properties)
     convert_sdf_to_npz('data/ncidb.sdf', properties=['KOW logP'])
+    convert_sdf_to_npz('data/ncidb.sdf', properties=['Experimental logP'], npz_file_path='data/ncidb_experim_data_fingerprints.npz')
 
 
 if __name__ == '__main__':

@@ -1,6 +1,7 @@
 """ Fully connected Neural Network fingerprints classifier for logP """
 import os
 from sys import platform
+import json
 
 from utils.build_dataset import get_data
 from utils.misc import r_squared
@@ -13,7 +14,8 @@ if platform == "darwin":  # OS X
 import matplotlib.pyplot as plt
 
 
-MODEL_NAME = 'fcnn_logp'
+MODEL_NAME = 'fcnn_logp_6l'
+
 
 def fcnn_classifier_logp(n_x, n_y):
     """
@@ -27,6 +29,10 @@ def fcnn_classifier_logp(n_x, n_y):
     classifier = keras.Sequential([
         keras.layers.InputLayer(input_shape=(n_x,)),
         keras.layers.Dense(n_x, activation=tf.nn.relu),
+        keras.layers.Dense(int(n_x/2), activation=tf.nn.relu),
+        keras.layers.Dense(int(n_x/8), activation=tf.nn.relu),
+        keras.layers.Dense(int(n_x/4), activation=tf.nn.relu),
+        keras.layers.Dense(int(n_x/16), activation=tf.nn.relu),
         keras.layers.Dense(n_y)
     ])
 
@@ -36,6 +42,27 @@ def fcnn_classifier_logp(n_x, n_y):
                        )
 
     return classifier
+
+
+def save_history(history, filepath):
+    with open(filepath, 'w') as fp:
+        json.dump(history.history, fp)
+
+
+def plot_data(history, model_name, epochs, metrics):
+    # Get data from history
+    print(history.history.keys())
+    # Plot the mean_absolute_error
+    for metric in metrics:
+        plt.plot(history.history[metric])
+        plt.plot(history.history['val_%s' % metric])
+        plt.title("model %s" % metric)
+        plt.ylabel(metric)
+        plt.xlabel('epoch')
+        plt.legend(['train', 'val'], loc='upper left')
+        # Save the plot
+        plt.savefig("output/%s_%s_%s.png" % (model_name, metric, epochs))
+        plt.show()
 
 
 def main(train=False):
@@ -80,45 +107,13 @@ def main(train=False):
                                )
 
         #Get data from history
-        # Plot the mean_absolute_error
-        print(history.history.keys())
-        plt.plot(history.history['mean_absolute_error'])
-        plt.plot(history.history['val_mean_absolute_error'])
-        plt.title("model mean_absolute_error")
-        plt.ylabel('mae')
-        plt.xlabel('epoch')
-        plt.xticks(range(0, epochs, 1))
-        plt.legend(['train', 'val'], loc='upper left')
-        #Save the plot
-        plt.savefig("output/fcnn_logp_mae_%s.png" % epochs)
-        plt.show()
+        metrics = ['mean_absolute_error', 'r_squared', 'loss']
+        save_history(history, "output/%s_%s_history.json" % (MODEL_NAME, epochs))
+        plot_data(history, MODEL_NAME, epochs, metrics=metrics)
 
-        #Plot the R2
-        plt.plot(history.history['r_squared'])
-        plt.plot(history.history['val_r_squared'])
-        plt.title("model R2")
-        plt.ylabel('R2')
-        plt.xlabel('epoch')
-        plt.xticks(range(0, epochs, 1))
-        plt.legend(['train', 'val'], loc='upper left')
-        #Save the plot
-        plt.savefig("output/fcnn_logp_r2_%s.png" % epochs)
-        plt.show()
-
-        #Plot the loss
-        plt.plot(history.history['loss'])
-        plt.plot(history.history['val_loss'])
-        plt.title('model loss')
-        plt.ylabel('loss')
-        plt.xlabel('epoch')
-        plt.xticks(range(0, epochs, 1))
-        plt.legend(['train', 'val'], loc='upper left')
-        #Save the plot
-        plt.savefig("output/fcnn_logp_loss_%s.png" % epochs)
-        plt.show()
     else:
         # Load the model weights
-        weights_file_path = os.path.abspath(os.path.join(os.curdir, 'weights/fcnn_logp_%s.h5' % epochs))
+        weights_file_path = os.path.abspath(os.path.join(os.curdir, 'weights/%s_%s.h5' % (MODEL_NAME, epochs)))
         if not os.path.exists(weights_file_path):
             raise Exception(
                 "The weights file path specified does not exists: %s"
@@ -136,5 +131,5 @@ def main(train=False):
 
 
 if __name__ == '__main__':
-    main(train=True)
+    main(train=False)
 
