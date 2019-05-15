@@ -1,4 +1,4 @@
-""" Fully connected Neural Network fingerprints regression for logP """
+""" Fully connected Neural Network fingerprints model for logP """
 import os
 
 from utils.build_dataset import get_data
@@ -7,10 +7,11 @@ import tensorflow as tf
 import keras
 
 
-MODEL_NAME = 'fcnn_logp_6l'
+MODEL_NAME = 'fcnn_exp_logp_6l_trsf_lrng'
+# MODEL_NAME = 'fcnn_exp_logp_6l'
 
 
-def fcnn_model_logp(n_x, n_y, lmbda):
+def fcnn_model_logp(n_x, n_y, lmbda, transf_learn_weights_path=None, frozen_layers=0):
     """
     This function returns a Fully Connected NN keras model
 
@@ -34,19 +35,28 @@ def fcnn_model_logp(n_x, n_y, lmbda):
                        metrics=['mae', r_squared]
                        )
 
+    # Transfer learning
+    if transf_learn_weights_path:
+        model.load_weights(transf_learn_weights_path)
+        for layer in model.layers[:frozen_layers]:
+            # Freeze the layers except the last 4 layers
+            layer.trainable = False
+
     return model
 
 
 def main(train=False):
     """ Main function """
     # Get train and test dataset
-    (x_train, y_train), (x_test, y_test) = get_data('data/ncidb_fingerprints.npz')
+    (x_train, y_train), (x_test, y_test) = get_data('data/ncidb_experim_data_fingerprints.npz', split=0.2)
 
     n_x = x_train[0].shape[0]
     n_y = y_train[0].shape[0]
 
     # Build model
-    fcnn_mdl = fcnn_model_logp(n_x, n_y, lmbda=0)
+    fcnn_mdl = fcnn_model_logp(n_x, n_y, lmbda=0, transf_learn_weights_path='weights/fcnn_logp_6l_50.h5', frozen_layers=4)
+    # fcnn_mdl = fcnn_model_logp(n_x, n_y, lmbda=0)
+
 
     epochs = 50
 
@@ -74,7 +84,7 @@ def main(train=False):
         history = fcnn_mdl.fit(x_train,
                                y_train,
                                epochs=epochs,
-                               validation_split=0.1,
+                               validation_split=0.2,
                                callbacks=[weights_ckpt, best_ckpt]  # Save weights
                                )
 
@@ -91,7 +101,6 @@ def main(train=False):
                 "The weights file path specified does not exists: %s"
                 % os.path.exists(weights_file_path)
             )
-
         fcnn_mdl.load_weights(weights_file_path)
 
     print('\ntest the model')
