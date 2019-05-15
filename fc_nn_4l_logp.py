@@ -1,4 +1,4 @@
-""" Fully connected Neural Network fingerprints regression for logP """
+""" Fully connected Neural Network fingerprints model for logP """
 import os
 
 from utils.build_dataset import get_data
@@ -7,10 +7,10 @@ import tensorflow as tf
 import keras
 
 
-MODEL_NAME = 'fcnn_logp_6l'
+MODEL_NAME = 'fcnn_logp_4l_l2reg'
 
 
-def fcnn_model_logp(n_x, n_y, lmbda):
+def fcnn_model_logp(n_x, n_y, lmbda=0.01):
     """
     This function returns a Fully Connected NN keras model
 
@@ -23,9 +23,7 @@ def fcnn_model_logp(n_x, n_y, lmbda):
         keras.layers.InputLayer(input_shape=(n_x,)),
         keras.layers.Dense(n_x, activation=tf.nn.relu, kernel_regularizer=keras.regularizers.l2(lmbda)),
         keras.layers.Dense(int(n_x/2), activation=tf.nn.relu, kernel_regularizer=keras.regularizers.l2(lmbda)),
-        keras.layers.Dense(int(n_x/8), activation=tf.nn.relu, kernel_regularizer=keras.regularizers.l2(lmbda)),
         keras.layers.Dense(int(n_x/4), activation=tf.nn.relu, kernel_regularizer=keras.regularizers.l2(lmbda)),
-        keras.layers.Dense(int(n_x/16), activation=tf.nn.relu, kernel_regularizer=keras.regularizers.l2(lmbda)),
         keras.layers.Dense(n_y)
     ])
 
@@ -46,7 +44,7 @@ def main(train=False):
     n_y = y_train[0].shape[0]
 
     # Build model
-    fcnn_mdl = fcnn_model_logp(n_x, n_y, lmbda=0)
+    fcnn_mdl = fcnn_model_logp(n_x, n_y)
 
     epochs = 50
 
@@ -91,7 +89,6 @@ def main(train=False):
                 "The weights file path specified does not exists: %s"
                 % os.path.exists(weights_file_path)
             )
-
         fcnn_mdl.load_weights(weights_file_path)
 
     print('\ntest the model')
@@ -104,5 +101,5 @@ def main(train=False):
 
 
 if __name__ == '__main__':
-    main(train=True)
+    main(train=False)
 
