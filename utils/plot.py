@@ -102,9 +102,9 @@ def transfer_learning_plot(metric='loss', loc='upper left'):
 def main():
     l2_plot()
     layers_plot()
-    layers_plot('r_squared', 'bottom right')
+    layers_plot('r_squared', 'lower right')
     transfer_learning_plot()
-    transfer_learning_plot(metric='r_squared', loc='bottom right')
+    transfer_learning_plot(metric='r_squared', loc='lower right')
 
 
 if __name__ == '__main__':
