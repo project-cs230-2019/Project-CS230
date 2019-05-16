@@ -5,7 +5,7 @@ import numpy as np
 from rdkit import Chem
 from rdkit.Chem import Draw
 from rdkit.Chem.rdmolops import RDKFingerprint
-from keras.preprocessing.image import load_img
+from keras.preprocessing.image import img_to_array, array_to_img
 
 from utils.misc import set_up_logging
 
@@ -56,8 +56,9 @@ def convert_sdf_to_npz(
                 if struct_type == 'fingerprints':
                     structure = convert_smiles_into_fingerprints(smile)
                 elif struct_type == '2Dimg':
-                    # TODO implement the image importer
-                    raise NotImplementedError('The image importer has not been implemented yet')
+                    img = convert_smiles_into_2d_structure_images(smile)
+                    structure = img_to_array(img)
+
                 else:
                     raise NameError(
                         'The structure type specified does not exist. '
@@ -107,13 +108,13 @@ def convert_sdf_to_npz(
 
 def convert_smiles_into_2d_structure_images(smile):
     """
-    Converts SMILES text strings into 2D structure images
+    Converts SMILES text strings into 2D structure PIL images
 
     :param smile:       (str) SMILE chemical formula. E.g.: 'O=C(C)Oc1ccccc1C(=O)O'
     :return:            None
     """
     mol = Chem.MolFromSmiles(smile)
-    Draw.MolToFile(mol, 'data/cdk2_mol1.o.png')
+    return Draw.MolToImage(mol, size=(800, 800)).convert(mode='L')  # L: grayscale
 
 
 def convert_smiles_into_fingerprints(smile):
@@ -127,31 +128,21 @@ def convert_smiles_into_fingerprints(smile):
     return list(RDKFingerprint(mol))
 
 
-def convert_img_into_array(path_to_img):
-    """
-
-    :param path_to_img:     (str) Path to image file
-    :return:                Keras array representing the image
-    """
-    # load the image
-    img = load_img(path_to_img)
-    # report details about the image
-    print(type(img))
-    print(img.format)
-    print(img.mode)
-    print(img.size)
-    # show the image
-    img.show()
-
-
 def main():
     """ Main function """
     # Preprocess the two datasets
     properties = ['NR-AR', 'NR-ER-LBD', 'SR-ATAD5']
     # properties = ['NR-AhR', 'NR-AR', 'NR-AR-LBD', 'NR-ER', 'NR-ER-LBD', 'NR-PPAR-gamma', 'SR-ARE', 'SR-ATAD5', 'SR-HSE', 'SR-MMP', 'SR-p53', 'NR-Aromatase']
+
+    # Fingerprints
     convert_sdf_to_npz('data/tox21_10k_data_all.sdf', properties=properties)
     convert_sdf_to_npz('data/ncidb.sdf', properties=['KOW logP'])
     convert_sdf_to_npz('data/ncidb.sdf', properties=['Experimental logP'], npz_file_path='data/ncidb_experim_data_fingerprints.npz')
+
+    # Skeletal Formulas (2D images)
+    convert_sdf_to_npz('data/tox21_10k_data_all.sdf', struct_type='2Dimg', properties=properties)
+    convert_sdf_to_npz('data/ncidb.sdf', struct_type='2Dimg', properties=['KOW logP'])
+    convert_sdf_to_npz('data/ncidb.sdf', struct_type='2Dimg', properties=['Experimental logP'], npz_file_path='data/ncidb_experim_data_fingerprints.npz')
 
 
 if __name__ == '__main__':
