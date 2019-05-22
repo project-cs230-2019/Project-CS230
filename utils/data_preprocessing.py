@@ -7,7 +7,7 @@ from rdkit.Chem import Draw
 from rdkit.Chem.rdmolops import RDKFingerprint
 from keras.preprocessing.image import load_img
 
-from utils.misc import set_up_logging
+from misc import set_up_logging
 
 # Set random seed to make the result reproducible
 random.seed(1)
@@ -62,9 +62,18 @@ def convert_sdf_to_npz(
 
             # Check if the example contains all the searched properties
             # otherwise discard it
-            if set(properties) <= set(properties_dict.keys()):
+            if set(properties) & set(properties_dict.keys()):
                 X.append(structure)
-                Y.append([properties_dict[key] for key in properties])
+                Y1 = []
+                for key in properties:
+                    k = properties_dict.get(key)
+                    if k is None:
+                        Y1.append(-1)
+                    else:
+                        Y1.append(k)
+                Y.append(Y1)
+                print(Y1)
+                # Y.append([properties_dict[key] for key in properties])
 
         except AttributeError as err:
             LOGGER.warning("Molecule discarded from the dataset because: %r", err)
@@ -98,7 +107,7 @@ def convert_sdf_to_npz(
     )
 
     # Assign a file path for npz file if None
-    npz_file_path = npz_file_path or sdf_file_path.replace(".sdf", "_%s.npz" % struct_type)
+    npz_file_path = npz_file_path or sdf_file_path.replace(".sdf", "_%s_multi.npz" % struct_type)
 
     # Save npz file
     np.savez(npz_file_path, x=X, y=Y)
@@ -146,10 +155,11 @@ def convert_img_into_array(path_to_img):
 def main():
     """ Main function """
     # Preprocess the two datasets
+    # properties = ['NR-AR']
     properties = ['NR-AR', 'NR-ER-LBD', 'SR-ATAD5']
     # properties = ['NR-AhR', 'NR-AR', 'NR-AR-LBD', 'NR-ER', 'NR-ER-LBD', 'NR-PPAR-gamma', 'SR-ARE', 'SR-ATAD5', 'SR-HSE', 'SR-MMP', 'SR-p53', 'NR-Aromatase']
-    convert_sdf_to_npz('data/tox21_10k_data_all.sdf', properties=properties)
-    convert_sdf_to_npz('data/ncidb.sdf', properties=['KOW logP'])
+    convert_sdf_to_npz('../data/tox21_10k_data_all.sdf', properties=properties)
+    convert_sdf_to_npz('../data/ncidb.sdf', properties=['KOW logP'])
 
 
 if __name__ == '__main__':

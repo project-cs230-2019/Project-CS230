@@ -1,6 +1,13 @@
+from sys import platform
+import json
 import logging
 from rdkit import RDLogger
 from keras import backend as K
+import matplotlib
+if platform == "darwin":  # OS X
+    matplotlib.use('TkAgg')
+
+import matplotlib.pyplot as plt
 
 
 def set_up_logging(logger_name):
@@ -15,6 +22,27 @@ def set_up_logging(logger_name):
     rdlg.setLevel(RDLogger.CRITICAL)
 
     return LOGGER
+
+
+def save_history(history, filepath):
+    with open(filepath, 'w') as fp:
+        json.dump(history.history, fp)
+
+
+def plot_data(history, model_name, epochs, metrics):
+    # Get data from history
+    print(history.history.keys())
+    # Plot the mean_absolute_error
+    for metric in metrics:
+        plt.plot(history.history[metric])
+        plt.plot(history.history['val_%s' % metric])
+        plt.title("model %s" % metric)
+        plt.ylabel(metric)
+        plt.xlabel('epoch')
+        plt.legend(['train', 'val'], loc='upper left')
+        # Save the plot
+        plt.savefig("output/%s_%s_%s.png" % (model_name, metric, epochs))
+        plt.show()
 
 
 def r_squared(y_true, y_pred):
