@@ -6,7 +6,7 @@ from utils.misc import r_squared, plot_data, save_history
 import keras
 
 
-MODEL_NAME = 'CNN_6l_logp'
+MODEL_NAME = 'CNN_4l_logp'
 
 
 def fcnn_model_logp(n_h, n_w, n_c, n_y, lmbda):
@@ -21,37 +21,23 @@ def fcnn_model_logp(n_h, n_w, n_c, n_y, lmbda):
     """
 
     model = keras.Sequential([
-        keras.layers.Conv2D(8, kernel_size=3,
+        keras.layers.Conv2D(16, kernel_size=3,
                             strides=2,
                             input_shape=(n_h, n_w, n_c)),
         keras.layers.BatchNormalization(),
         keras.layers.LeakyReLU(),
-        keras.layers.Dropout(0.8),
-        keras.layers.Conv2D(16, kernel_size=3,
-                            strides=2),
-        keras.layers.BatchNormalization(),
-        keras.layers.LeakyReLU(),
-        keras.layers.Dropout(0.8),
         keras.layers.Conv2D(32, kernel_size=3,
                             strides=2),
         keras.layers.BatchNormalization(),
         keras.layers.LeakyReLU(),
-        keras.layers.Dropout(0.8),
         keras.layers.Conv2D(64, kernel_size=3,
                             strides=2),
         keras.layers.BatchNormalization(),
         keras.layers.LeakyReLU(),
-        keras.layers.Dropout(0.8),
-        keras.layers.Conv2D(128, kernel_size=3,
-                            strides=2),
-        keras.layers.BatchNormalization(),
-        keras.layers.LeakyReLU(),
-        keras.layers.Dropout(0.8),
-        keras.layers.Conv2D(256, kernel_size=3,
-                            strides=1),
-        keras.layers.BatchNormalization(),
-        keras.layers.LeakyReLU(),
         keras.layers.Flatten(),
+        keras.layers.Dense(128),
+        keras.layers.BatchNormalization(),
+        keras.layers.LeakyReLU(),
         keras.layers.Dense(n_y, kernel_regularizer=keras.regularizers.l2(lmbda))
     ])
 
@@ -74,6 +60,7 @@ def main(train=False):
     x_train = x_train.astype('float32')
     x_test = x_test.astype('float32')
 
+    # Input data normalization
     # Transform all input matrix elements in values belonging to [0,1] interval
     x_train /= 255
     x_test /= 255

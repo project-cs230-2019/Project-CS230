@@ -3,11 +3,10 @@ import os
 
 from utils.build_dataset import get_data
 from utils.misc import r_squared, plot_data, save_history
-import tensorflow as tf
 import keras
 
 
-MODEL_NAME = 'CNN_logp'
+MODEL_NAME = 'CNN_6l_logp'
 
 
 def fcnn_model_logp(n_h, n_w, n_c, n_y, lmbda):
@@ -22,23 +21,46 @@ def fcnn_model_logp(n_h, n_w, n_c, n_y, lmbda):
     """
 
     model = keras.Sequential([
-        keras.layers.Conv2D(16, kernel_size=7,
-                            strides=4,
-                            activation='relu',
-                            input_shape=(n_h, n_w, n_c)),
-        keras.layers.Conv2D(32, kernel_size=5,
+        keras.layers.Conv2D(8, kernel_size=3,
                             strides=2,
-                            activation='relu'),
-        keras.layers.MaxPool2D(pool_size=2),
+                            input_shape=(n_h, n_w, n_c)),
+        keras.layers.BatchNormalization(),
+        keras.layers.LeakyReLU(),
+        keras.layers.Dropout(0.2),
+        keras.layers.Conv2D(16, kernel_size=3,
+                            strides=2),
+        keras.layers.BatchNormalization(),
+        keras.layers.LeakyReLU(),
+        keras.layers.Dropout(0.2),
+        keras.layers.Conv2D(32, kernel_size=3,
+                            strides=2),
+        keras.layers.BatchNormalization(),
+        keras.layers.LeakyReLU(),
+        keras.layers.Dropout(0.2),
+        keras.layers.Conv2D(64, kernel_size=3,
+                            strides=2),
+        keras.layers.BatchNormalization(),
+        keras.layers.LeakyReLU(),
+        keras.layers.Dropout(0.2),
+        keras.layers.Conv2D(128, kernel_size=3,
+                            strides=2),
+        keras.layers.BatchNormalization(),
+        keras.layers.LeakyReLU(),
+        keras.layers.Dropout(0.2),
+        keras.layers.Conv2D(256, kernel_size=3,
+                            strides=1),
+        keras.layers.BatchNormalization(),
+        keras.layers.LeakyReLU(),
         keras.layers.Flatten(),
-        keras.layers.Dense(64, activation=tf.nn.relu, kernel_regularizer=keras.regularizers.l2(lmbda)),
         keras.layers.Dense(n_y, kernel_regularizer=keras.regularizers.l2(lmbda))
     ])
 
-    model.compile(optimizer=tf.train.AdamOptimizer(),
+    model.compile(optimizer=keras.optimizers.Adam(),
                        loss='mse',
                        metrics=['mae', r_squared]
                        )
+
+    model.summary()
 
     return model
 
@@ -52,6 +74,7 @@ def main(train=False):
     x_train = x_train.astype('float32')
     x_test = x_test.astype('float32')
 
+    # Input data normalization
     # Transform all input matrix elements in values belonging to [0,1] interval
     x_train /= 255
     x_test /= 255
@@ -63,7 +86,7 @@ def main(train=False):
     # Build model
     fcnn_mdl = fcnn_model_logp(n_h, n_w, n_c, n_y, lmbda=0)
 
-    epochs = 50
+    epochs = 5
 
     if train:
         # Train model

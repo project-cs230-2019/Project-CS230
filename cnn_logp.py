@@ -1,4 +1,4 @@
-""" Fully connected Neural Network fingerprints model for logP """
+""" Convolutional Neural Network @D image of skeletal formula model for logP """
 import os
 
 from utils.build_dataset import get_data
@@ -7,28 +7,40 @@ import tensorflow as tf
 import keras
 
 
-MODEL_NAME = 'fcnn_logp'
+MODEL_NAME = 'CNN_logp'
 
 
-def fcnn_model_logp(n_x, n_y, lmbda):
+def fcnn_model_logp(n_h, n_w, n_c, n_y, lmbda):
     """
     This function returns a Fully Connected NN keras model
 
-    :param n_x:     size of the input
+    :param n_h:     height of the 2D image input
+    :param n_w:     width of the 2D image input
+    :param n_c:     number of channels of the 2D image input
     :param n_y:     size of the output
     :return:        keras untrained Fully Connected NN linear regression model
     """
 
     model = keras.Sequential([
-        keras.layers.InputLayer(input_shape=(n_x,)),
-        keras.layers.Dense(n_x, activation=tf.nn.relu, kernel_regularizer=keras.regularizers.l2(lmbda)),
+        keras.layers.Conv2D(16, kernel_size=7,
+                            strides=4,
+                            activation='relu',
+                            input_shape=(n_h, n_w, n_c)),
+        keras.layers.Conv2D(32, kernel_size=5,
+                            strides=2,
+                            activation='relu'),
+        keras.layers.MaxPool2D(pool_size=2),
+        keras.layers.Flatten(),
+        keras.layers.Dense(64, activation=tf.nn.relu, kernel_regularizer=keras.regularizers.l2(lmbda)),
         keras.layers.Dense(n_y, kernel_regularizer=keras.regularizers.l2(lmbda))
     ])
 
-    model.compile(optimizer=tf.train.AdamOptimizer(),
+    model.compile(optimizer=keras.optimizers.Adam(),
                        loss='mse',
                        metrics=['mae', r_squared]
                        )
+
+    model.summary()
 
     return model
 
@@ -36,13 +48,23 @@ def fcnn_model_logp(n_x, n_y, lmbda):
 def main(train=False):
     """ Main function """
     # Get train and test dataset
-    (x_train, y_train), (x_test, y_test) = get_data('data/ncidb_fingerprints.npz')
+    (x_train, y_train), (x_test, y_test) = get_data('data/ncidb_2Dimg.npz')
 
-    n_x = x_train[0].shape[0]
+    # Change element type
+    x_train = x_train.astype('float32')
+    x_test = x_test.astype('float32')
+
+    # Input data normalization
+    # Transform all input matrix elements in values belonging to [0,1] interval
+    x_train /= 255
+    x_test /= 255
+
+    n_h, n_w, n_c = x_train[0].shape
     n_y = y_train[0].shape[0]
 
+
     # Build model
-    fcnn_mdl = fcnn_model_logp(n_x, n_y, lmbda=0)
+    fcnn_mdl = fcnn_model_logp(n_h, n_w, n_c, n_y, lmbda=0)
 
     epochs = 50
 
