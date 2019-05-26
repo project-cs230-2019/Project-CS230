@@ -2,6 +2,7 @@ import random
 
 import numpy as np
 
+from PIL import Image
 from rdkit import Chem
 from rdkit.Chem import Draw
 from rdkit.Chem.rdmolops import RDKFingerprint
@@ -57,6 +58,8 @@ def convert_sdf_to_npz(
                     structure = convert_smiles_into_fingerprints(smile)
                 elif struct_type == '2Dimg':
                     img = convert_smiles_into_2d_structure_images(smile)
+                    # Resize down image using ANTIALIAS
+                    img = img.resize((150, 150), Image.ANTIALIAS)
                     structure = img_to_array(img)
 
                 else:
@@ -71,9 +74,15 @@ def convert_sdf_to_npz(
         except AttributeError as err:
             LOGGER.warning("Molecule discarded from the dataset because: %r", err)
 
-        if counter%1000 == 0:
+        if counter and counter%1000 == 0:
             print('Processed %d/%d molecules' % (counter, tot_num_mols))
+
+        # Sanity check print an image every 5000
+        if counter and counter%5000 == 0 and struct_type == '2Dimg':
+            array_to_img(structure).show()
+
         counter += 1
+
 
     # Zip X and Y for shuffle
     mols = list(zip(X, Y))
@@ -114,7 +123,7 @@ def convert_smiles_into_2d_structure_images(smile):
     :return:            None
     """
     mol = Chem.MolFromSmiles(smile)
-    return Draw.MolToImage(mol, size=(800, 800)).convert(mode='L')  # L: grayscale
+    return Draw.MolToImage(mol, size=(300, 300), fitImage=True).convert(mode='L')  # L: grayscale
 
 
 def convert_smiles_into_fingerprints(smile):
@@ -142,7 +151,7 @@ def main():
     # Skeletal Formulas (2D images)
     convert_sdf_to_npz('data/tox21_10k_data_all.sdf', struct_type='2Dimg', properties=properties)
     convert_sdf_to_npz('data/ncidb.sdf', struct_type='2Dimg', properties=['KOW logP'])
-    convert_sdf_to_npz('data/ncidb.sdf', struct_type='2Dimg', properties=['Experimental logP'], npz_file_path='data/ncidb_experim_data_fingerprints.npz')
+    convert_sdf_to_npz('data/ncidb.sdf', struct_type='2Dimg', properties=['Experimental logP'], npz_file_path='data/ncidb_experim_data_2Dimg.npz')
 
 
 if __name__ == '__main__':
