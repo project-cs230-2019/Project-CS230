@@ -8,6 +8,7 @@ from rdkit.Chem import Draw
 from rdkit.Chem.rdmolops import RDKFingerprint
 from keras.preprocessing.image import img_to_array, array_to_img
 
+from utils.build_dataset import split_train_test_dataset
 from utils.misc import set_up_logging
 
 # Set random seed to make the result reproducible
@@ -22,7 +23,20 @@ def convert_sdf_to_npz(
         struct_type='fingerprints',
         properties=None,
         npz_file_path=None,
+        split=0.
         ):
+    """
+    Converts sdf files into numpy arrays files file containing the chemical structure
+    as either fingerprint or 2D image and properties
+
+    :param sdf_file_path:       (str) Path to the sdf file.
+    :param struct_type:         (str) type of the molecular structure reppresentation: "fingerprints" or "2Dimg"
+    :param porperties:          (list) Molecular properties to include in the npz file.
+    :param npz_file_path:       (str) Path where to save the npz output.
+                                If not specified it would be saved in the same dir of sdf file.
+    :param split:               (float) Split between training and test set. If "0." no split between training and test would be performed.
+    :return:                    None
+    """
     """
     Converts sdf files into numpy arrays files file containing the chemical structure
     as either fingerprint or 2D image and properties
@@ -111,8 +125,24 @@ def convert_sdf_to_npz(
     # Assign a file path for npz file if None
     npz_file_path = npz_file_path or sdf_file_path.replace(".sdf", "_%s.npz" % struct_type)
 
-    # Save npz file
-    np.savez(npz_file_path, x=X, y=Y)
+    # Split if requested
+    if split:
+        x_train, x_test = split_train_test_dataset(X, split)
+        y_train, y_test = split_train_test_dataset(Y, split)
+        npz_test_file_path = npz_file_path.replace(".npz", "_test.npz")
+
+        # Save npz files
+        np.savez(npz_file_path, x=x_train, y=y_train)
+        np.savez(npz_test_file_path, x=x_test, y=y_test)
+        LOGGER.info(
+            "dataset splitted into %d train samples and %d test samples",
+            len(x_train),
+            len(x_test)
+        )
+
+    else:
+        # Save npz file
+        np.savez(npz_file_path, x=X, y=Y)
 
 
 def convert_smiles_into_2d_structure_images(smile):
@@ -150,7 +180,7 @@ def main():
 
     # Skeletal Formulas (2D images)
     convert_sdf_to_npz('data/tox21_10k_data_all.sdf', struct_type='2Dimg', properties=properties)
-    convert_sdf_to_npz('data/ncidb.sdf', struct_type='2Dimg', properties=['KOW logP'])
+    convert_sdf_to_npz('data/ncidb.sdf', struct_type='2Dimg', properties=['KOW logP'], split=0.1)
     convert_sdf_to_npz('data/ncidb.sdf', struct_type='2Dimg', properties=['Experimental logP'], npz_file_path='data/ncidb_experim_data_2Dimg.npz')
 
 

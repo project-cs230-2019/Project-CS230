@@ -8,7 +8,6 @@ import keras
 
 MODEL_NAME = 'CNN_6l_logp'
 
-
 def fcnn_model_logp(n_h, n_w, n_c, n_y, lmbda):
     """
     This function returns a Fully Connected NN keras model
@@ -24,32 +23,26 @@ def fcnn_model_logp(n_h, n_w, n_c, n_y, lmbda):
         keras.layers.Conv2D(8, kernel_size=3,
                             strides=2,
                             input_shape=(n_h, n_w, n_c)),
-        keras.layers.BatchNormalization(),
         keras.layers.LeakyReLU(),
         keras.layers.Dropout(0.2),
         keras.layers.Conv2D(16, kernel_size=3,
                             strides=2),
-        keras.layers.BatchNormalization(),
         keras.layers.LeakyReLU(),
         keras.layers.Dropout(0.2),
         keras.layers.Conv2D(32, kernel_size=3,
                             strides=2),
-        keras.layers.BatchNormalization(),
         keras.layers.LeakyReLU(),
         keras.layers.Dropout(0.2),
         keras.layers.Conv2D(64, kernel_size=3,
                             strides=2),
-        keras.layers.BatchNormalization(),
         keras.layers.LeakyReLU(),
         keras.layers.Dropout(0.2),
         keras.layers.Conv2D(128, kernel_size=3,
                             strides=2),
-        keras.layers.BatchNormalization(),
         keras.layers.LeakyReLU(),
         keras.layers.Dropout(0.2),
         keras.layers.Conv2D(256, kernel_size=3,
                             strides=1),
-        keras.layers.BatchNormalization(),
         keras.layers.LeakyReLU(),
         keras.layers.Flatten(),
         keras.layers.Dense(n_y, kernel_regularizer=keras.regularizers.l2(lmbda))
@@ -68,7 +61,7 @@ def fcnn_model_logp(n_h, n_w, n_c, n_y, lmbda):
 def main(train=False):
     """ Main function """
     # Get train and test dataset
-    (x_train, y_train), (x_test, y_test) = get_data('data/ncidb_2Dimg.npz')
+    (x_train, y_train), (x_test, y_test) = get_data('data/ncidb_2Dimg.npz', test_data_file='data/ncidb_2Dimg_test.npz')
 
     # Change element type
     x_train = x_train.astype('float32')
