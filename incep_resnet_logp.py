@@ -1,4 +1,4 @@
-""" Convolutional Neural Network @D image of skeletal formula model for logP """
+""" Convolutional Neural Network 2D image of skeletal formula model for logP """
 import os
 
 from utils.build_dataset import get_data
