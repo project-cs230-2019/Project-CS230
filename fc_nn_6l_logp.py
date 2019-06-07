@@ -37,7 +37,7 @@ def fcnn_model_logp(n_x, n_y, lmbda):
     return model
 
 
-def main(train=False):
+def main(train=False, weights_file_path=None):
     """ Main function """
     # Get train and test dataset
     (x_train, y_train), (x_test, y_test) = get_data('data/ncidb_fingerprints.npz')
@@ -85,7 +85,8 @@ def main(train=False):
 
     else:
         # Load the model weights
-        weights_file_path = os.path.abspath(os.path.join(os.curdir, 'weights/%s_%s.h5' % (MODEL_NAME, epochs)))
+        if not weights_file_path:
+            weights_file_path = os.path.abspath(os.path.join(os.curdir, 'weights/%s_%s.h5' % (MODEL_NAME, epochs)))
         if not os.path.exists(weights_file_path):
             raise Exception(
                 "The weights file path specified does not exists: %s"
@@ -105,4 +106,6 @@ def main(train=False):
 
 if __name__ == '__main__':
     main(train=True)
+    # Comment the previous line and Uncomment the following for running in test mode
+    # main(train=False, weights_file_path='weights/fcnn_logp_6l_best_val_r2.h5')
 
