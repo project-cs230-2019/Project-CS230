@@ -9,7 +9,6 @@ from keras.utils import multi_gpu_model
 
 MODEL_NAME = 'incep_resnet_compact_v4_exp_logp_trsf_lrng_small_lr'
 # MODEL_NAME = 'incep_resnet_compact_v4_exp_logp'
-
 # Set the number of available GPUs for the training
 GPUs=0
 
@@ -190,6 +189,7 @@ def main(train=False, weights_file_path=None):
     else:
         # Build model
         # In order to reload the saved weights you need to refroze exactly the same number of layers
+        # Change frozen index if using different weights from the one provided.
         incep_mdl = incep_model_logp(n_h, n_w, n_c, n_y, lmbda=0, frozen_index=7)
         incep_mdl.load_weights(weights_file_path)
 
