@@ -20,3 +20,31 @@ Setup Steps:
     ``` conda install -c rdkit rdkit ```
 5) Install requirements:
     ``` pip install -r requirements.txt ```
+
+
+Using the models
+----------------
+
+The best performing models are the following:
+* Lipophilicity predictors:
+    * **fingerprints input**\
+        fc_nn_6l_logp.py (LogP) \
+        fc_nn_6l_exp_logp.py (experimental LogP)
+    * **2D molecular images input** \
+        incep_resnet_compact_v4_logp.py  (LogP) \
+        incep_resnet_compact_v4_exp_logp.py  (experimental LogP)
+
+* Toxicity predictors:
+    * **fingerprints input**\
+        fc_nn_tox21.py
+
+    * **2D molecular images input** \
+        incep_resnet_tox21_t.py
+
+General instructions set ```Train=True``` in main function for training and ```Train=False```
+for running in test mode specifying a previously saved weight file.
+N.B: We include some of the best performing models weights files in ```weights/``` folder.
+
+You can see come of the previous run results (metrics images and history files) in the ```output/``` folder.
+
+
