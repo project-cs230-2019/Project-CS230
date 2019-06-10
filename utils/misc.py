@@ -28,7 +28,6 @@ def save_history(history, filepath):
     with open(filepath, 'w') as fp:
         json.dump(history.history, fp)
 
-
 def plot_data(history, model_name, epochs, metrics, show=False):
     # Get data from history
     print(history.history.keys())
