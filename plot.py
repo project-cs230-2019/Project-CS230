@@ -107,6 +107,39 @@ def transfer_learning_plot(metric='loss', loc='upper left'):
     plt.show()
 
 
+def summary_learning_plot(metric='loss', loc='upper left'):
+    for i, history_file in enumerate([
+        'fcnn_logp_6l_50_history.json',
+        'fcnn_exp_logp_6l_trsf_lrng_50_history.json',
+        'incep_resnet_compact_v4_logp_100_history.json',
+        'incep_resnet_compact_v4_exp_logp_trsf_lrng_small_lr_100_history.json',
+    ]):
+        with open(os.path.join('.','output', history_file), 'r') as hf:
+            history = json.load(hf)
+
+        plt.plot(history[metric], color='C%s' % i)
+        plt.plot(history['val_%s' % metric], '--', color='C%s' % i)
+
+    plt.title("model %s" % metric)
+    plt.ylabel(metric)
+    plt.xlabel('epoch')
+    plt.legend(
+        ['train fingerprint LogP',
+         'val fingerprint LogP',
+         'train fingerprint experim LogP (transf learn)',
+         'val fingerprint experim LogP (transf learn)',
+         'train 2d img LogP',
+         'val 2d img LogP',
+         'train 2d img experim LogP (transf learn)',
+         'val 2d img experim LogP (transf learn)',
+        ],
+        loc=loc,
+        )
+    # Save the plot
+    # plt.savefig("output/%s_%s_%s.png" % (model_name, metric, epochs))
+    plt.show()
+
+
 def plot_fingerprints_logp_predictions():
     # Load LogP data
     print('Loading data')
@@ -140,9 +173,9 @@ def plot_fingerprints_logp_predictions():
 
     # Plot scatter
     fig = plt.figure()
-    plt.scatter(y_test, y_pred, label="Test Set (LogP model). $R^2$: 0.839")
-    plt.scatter(exp_y_test, exp_y_pred, label="Test Set (Experimental LogP model). $R^2$: 0.923")
-    plt.title("Predicted LogP values from fingerprints")
+    plt.scatter(y_test, y_pred, label="LogP model (Test Set). $R^2$: 0.839")
+    plt.scatter(exp_y_test, exp_y_pred, label="Experimental LogP model (Test Set). $R^2$: 0.923")
+    plt.title("Predicted LogP values from molecular fingerprints")
     plt.xlabel("True values")
     plt.ylabel("Predicted values")
     plt.plot([-20, 40], [-20, 40], '--', color='red')
@@ -191,8 +224,8 @@ def plot_2Dimg_logp_predictions():
 
     # Plot scatter
     fig = plt.figure()
-    plt.scatter(y_test, y_pred, label="Test Set (LogP model). $R^2$: 0.852")
-    plt.scatter(exp_y_test, exp_y_pred, label="Test Set (Experimental LogP model). $R^2$: 0.964")
+    plt.scatter(y_test, y_pred, label="LogP model (Test Set). $R^2$: 0.852")
+    plt.scatter(exp_y_test, exp_y_pred, label="Experimental LogP model (Test Set). $R^2$: 0.964")
     plt.title("Predicted LogP values from 2D molecule images")
     plt.xlabel("True values")
     plt.ylabel("Predicted values")
@@ -233,7 +266,6 @@ def visualize_exp_logp_mdl_attention():
 
     # Load image
     image = load_img('data/exp_logP_test_mol3.bmp', color_mode="grayscale")
-
     visualize_layers_attention(exp_incep_mdl, [16, 17, 18, 19, 29, 30, 31], image)
 
 
@@ -258,6 +290,7 @@ def main():
     # layers_plot('r_squared', 'lower right')
     # transfer_learning_plot()
     # transfer_learning_plot(metric='r_squared', loc='lower right')
+    # summary_learning_plot(metric='r_squared', loc='lower right')
     # plot_fingerprints_logp_predictions()
     # plot_2Dimg_logp_predictions()
     visualize_exp_logp_mdl_attention()
