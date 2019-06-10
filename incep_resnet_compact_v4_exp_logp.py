@@ -7,10 +7,11 @@ import tensorflow as tf
 import keras
 from keras.utils import multi_gpu_model
 
+MODEL_NAME = 'incep_resnet_compact_v4_exp_logp_trsf_lrng_small_lr'
+# MODEL_NAME = 'incep_resnet_compact_v4_exp_logp'
 
-MODEL_NAME = 'incep_resnet_compact_v4_logp'
-# Number of available GPUs for the training
-GPUs=4
+# Set the number of available GPUs for the training
+GPUs=0
 
 
 def incept_res_block_a(input, n_c):
@@ -53,7 +54,7 @@ def incept_res_block_b(input, n_c):
     return output
 
 
-def incep_model_logp(n_h, n_w, n_c, n_y, lmbda):
+def incep_model_logp(n_h, n_w, n_c, n_y, lmbda, transf_learn_weights_path=None, frozen_index=0):
     """
     This function returns a Fully Connected NN keras model
 
@@ -96,10 +97,25 @@ def incep_model_logp(n_h, n_w, n_c, n_y, lmbda):
         model = keras.models.Model(inputs=input_img, outputs=output)
         model.summary()
 
-    model.compile(optimizer=keras.optimizers.Adam(clipnorm=1.0, clipvalue=0.5),
+    model.compile(optimizer=keras.optimizers.Adam(lr=0.0001, clipnorm=1.0, clipvalue=0.5),
                     loss='mse',
                     metrics=['mae', r_squared]
                     )
+
+    # Transfer learning
+    if transf_learn_weights_path:
+        model.load_weights(transf_learn_weights_path)
+
+    if frozen_index:
+        if GPUs > 1:
+            base_model = model.layers[-2]
+        else:
+            base_model = model
+        for layer in base_model.layers[:-frozen_index]:
+            # Freeze the layers except the last 4 layers
+            layer.trainable = False
+        base_model.summary()
+
     return model
 
 
@@ -107,7 +123,7 @@ def main(train=False, weights_file_path=None):
     """ Main function """
     # get train and test dataset
     print('Loading data')
-    (x_train, y_train), (x_test, y_test) = get_data('data/ncidb_2Dimg.npz')
+    (x_train, y_train), (x_test, y_test) = get_data('data/ncidb_experim_data_2Dimg.npz', split=0.2)
 
     print('Normalize input dividing it by 255')
     # Input data normalization
@@ -119,12 +135,17 @@ def main(train=False, weights_file_path=None):
     n_y = y_train[0].shape[0]
 
 
-    # Build model
-    incep_mdl = incep_model_logp(n_h, n_w, n_c, n_y, lmbda=0)
-
     epochs = 100
 
     if train:
+        # Build model
+        incep_mdl = incep_model_logp(
+            n_h, n_w, n_c, n_y, lmbda=0,
+            transf_learn_weights_path='weights/incep_resnet_compact_v4_logp_best_val_r2.h5',
+            frozen_index=7
+        )
+        # incep_mdl = incep_model_logp(n_h, n_w, n_c, n_y, lmbda=0)
+
         # Train model
         print('\ntrain the model')
 
@@ -157,7 +178,7 @@ def main(train=False, weights_file_path=None):
         history = incep_mdl.fit(x_train,
                                y_train,
                                epochs=epochs,
-                               validation_split=0.1,
+                               validation_split=0.2,
                                batch_size=batch_size,
                                callbacks=[weights_ckpt, best_ckpt, csv_logger]  # Save weights
                                )
@@ -167,6 +188,11 @@ def main(train=False, weights_file_path=None):
         save_history(history, "output/%s_%s_history.json" % (MODEL_NAME, epochs))
         plot_data(history, MODEL_NAME, epochs, metrics=metrics)
     else:
+        # Build model
+        # In order to reload the saved weights you need to refroze exactly the same number of layers
+        incep_mdl = incep_model_logp(n_h, n_w, n_c, n_y, lmbda=0, frozen_index=7)
+        incep_mdl.load_weights(weights_file_path)
+
         # Load the model weights
         if not weights_file_path:
             weights_file_path = os.path.abspath(os.path.join(os.curdir, 'weights/%s_%s.h5' % (MODEL_NAME, epochs)))
@@ -175,8 +201,6 @@ def main(train=False, weights_file_path=None):
                 "The weights file path specified does not exists: %s"
                 % os.path.exists(weights_file_path)
             )
-
-        incep_mdl.load_weights(weights_file_path)
 
     print('\ntest the model')
     test_loss, test_mae, test_r_squared = incep_mdl.evaluate(x_test, y_test)
@@ -190,5 +214,7 @@ def main(train=False, weights_file_path=None):
 if __name__ == '__main__':
     main(train=True)
     # Comment the previous line and Uncomment the following for running in test mode
-    # main(train=False, weights_file_path='weights/incep_resnet_compact_v4_logp_best_val_r2.h5')
+    # main(train=False, weights_file_path='weights/incep_resnet_compact_v4_exp_logp_trsf_lrng_small_lr_best_val_r2.h5')
 
+    # N.B: If testing with less than 2 GPUs use the following weights instead
+    # main(train=False, weights_file_path='weights/incep_resnet_compact_v4_exp_logp_trsf_lrng_small_lr_best_val_r2_nomultigpu.h5')
