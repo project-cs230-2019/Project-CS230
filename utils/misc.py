@@ -28,12 +28,12 @@ def save_history(history, filepath):
     with open(filepath, 'w') as fp:
         json.dump(history.history, fp)
 
-
-def plot_data(history, model_name, epochs, metrics):
+def plot_data(history, model_name, epochs, metrics, show=False):
     # Get data from history
     print(history.history.keys())
     # Plot the mean_absolute_error
-    for metric in metrics:
+    for i, metric in enumerate(metrics):
+        fig = plt.figure(i)
         plt.plot(history.history[metric])
         plt.plot(history.history['val_%s' % metric])
         plt.title("model %s" % metric)
@@ -42,7 +42,9 @@ def plot_data(history, model_name, epochs, metrics):
         plt.legend(['train', 'val'], loc='upper left')
         # Save the plot
         plt.savefig("output/%s_%s_%s.png" % (model_name, metric, epochs))
-        plt.show()
+        if show:
+            plt.show()
+        plt.close(fig)
 
 
 def r_squared(y_true, y_pred):
